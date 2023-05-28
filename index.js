@@ -2,6 +2,8 @@ import express from "express";
 import createError from "http-errors";
 import cors from "cors";
 import adminRouter from "./adminRoutes.js";
+import "./mongo.js";
+
 
 const app = express()
 app.use(express.json());

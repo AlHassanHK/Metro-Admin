@@ -1,23 +1,58 @@
-import { PrismaClient } from "@prisma/client";
+import stations from "./station.js";
 
-//Database enums, user RideStatus.pending for example
-import { UserRole } from "@prisma/client";
-import { RouteId } from "@prisma/client";
-import { RefundRequestStatus } from "@prisma/client";
 
-const prisma = new PrismaClient();
 
-const admins = prisma.User; //use Admin.findMany() for example, instead of typing prisma.User every time 
-//remember to check check that role === admin in queries
 
-const getAllAdmins = async (req, res) => {
+const getAllStations = async (req, res) => {
   try {
-    res.status(200).json({data: {hello:"from admin service"}});
+    const allStations = await stations.find({});
+    res.status(200).json(allStations);
   } catch (error) {
     res.status(400).send(error.message);
   }
 };
 
-export default {
-  getAllAdmins,
+
+
+const getStationByName = async (req, res) => {
+  try {
+    const { stationName } = req.params.stationName;
+    const foundStation = await stations.findOne({ "stop_name": req.params.stationName });
+    res.status(200).json(foundStation);
+  } catch (error) {
+    res.status(400).send(error.message);
+  }
 };
+
+
+const addStation = async (req, res) => {
+  try {
+    const newStation = await stations.create(req.body);
+    res.status(200).json(newStation);
+
+  } catch (error) {
+    res.status(400).json(error.message);
+  }
+}
+
+const deleteStation = async (req, res) => {
+  try {
+    const deletedStation = await stations.deleteOne({stop_name: req.params.stationName});
+
+    res.status(200).json(deletedStation);
+  } catch (error) {
+    res.status(400).json(error.message);
+  }
+}
+
+
+export default {
+  getAllStations,
+  getStationByName,
+  addStation,
+  deleteStation
+};
+
+
+
+
