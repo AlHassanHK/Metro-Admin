@@ -37,9 +37,13 @@ const addStation = async (req, res) => {
 
 const deleteStation = async (req, res) => {
   try {
-    const deletedStation = await stations.deleteOne({stop_name: req.params.stationName});
+    const deletedStation = await stations.findOne({
+      stop_name: req.params.stationName
+    })
 
-    res.status(200).json(deletedStation);
+    const deleteCount = await stations.deleteOne({ stop_name: req.params.stationName });
+
+    res.status(200).json({"Successfully deleted": deletedStation.FID, "Name":deletedStation.stop_name, deleteCount});
   } catch (error) {
     res.status(400).json(error.message);
   }
