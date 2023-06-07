@@ -1,5 +1,6 @@
 import stations from "./station.js";
 import routes from "./route.js";
+import wellknown from 'wellknown';
 
 
 const getAllStations = async (req, res) => {
@@ -39,7 +40,7 @@ const deleteStation = async (req, res) => {
 
     const deleteCount = await stations.deleteOne({ stop_name: req.params.stationName });
 
-    res.status(200).json({"Successfully deleted": deletedStation.FID, "Name":deletedStation.stop_name, deleteCount});
+    res.status(200).json({ "Successfully deleted": deletedStation.FID, "Name": deletedStation.stop_name, deleteCount });
   } catch (error) {
     res.status(400).json(error.message);
   }
@@ -48,7 +49,7 @@ const deleteStation = async (req, res) => {
 const updateRoute = async (req, res) => {
   try {
     //const options = { upsert: true };
-    const updatedRoute= await routes.findOne({
+    const updatedRoute = await routes.findOne({
       route_ID: req.params.route_id
     });
 
@@ -74,11 +75,35 @@ const deleteRoute = async (req, res) => {
 
     const deleteCount = await routes.deleteOne({ route_ID: req.params.route_id });
 
-    res.status(200).json({"Successfully deleted": deletedRoute.FID, "Name":deletedRoute.route_ID, deleteCount});
+    res.status(200).json({ "Successfully deleted": deletedRoute.FID, "Name": deletedRoute.route_ID, deleteCount });
   } catch (error) {
     res.status(400).json(error.message);
   }
 }
+
+const jsonToGeoJson = (stations) => {
+  return {
+    type: 'FeatureCollection',
+    features: stations.map(station => ({
+      type: 'Feature',
+      geometry: wellknown.parse(station.geometry),
+      properties: station
+    }))
+  };
+};
+
+
+const getAllStationsGEOJSON = async (_req, res) =>{
+  try {
+    const allStations = await stations.find({});
+    const geoJsonStations = jsonToGeoJson(allStations);  
+    res.status(200).json(geoJsonStations);
+  } catch (error) {
+    res.status(400).send(error.message);
+  }
+}
+
+
 
 
 export default {
@@ -87,9 +112,58 @@ export default {
   addStation,
   deleteStation,
   deleteRoute,
-  updateRoute
+  updateRoute,
+  getAllStationsGEOJSON
 };
 
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// const getAllStationsCSV = async (req, res) => {
+//   await writeCSV();
+
+//   res.sendFile("C:\\Users\\alhas\\Desktop\\cairo-metro-backup\\admin\\stations.csv");
+// }
+
+
+
+
+
+
+// const writeCSV = async () => {
+  //   let stationCSV = `FID,fid,geometry,stop_id,stop_name,route_id\n`
+  //   const rawData = await axios.get("https://metro-admin-gray.vercel.app/api/admin");
+  //   const allStations = rawData.data;
+  
+//   for (let station of allStations) {
+  //     for (let field in station) {
+    //       if (field === "route_id") {
+      //         stationCSV += `${station[field]}`;
+//       } else {
+//         stationCSV += `${station[field]},`;
+
+//       }
+//     }
+//     stationCSV += `\n`
+
+//   }
+
+//   fs.writeFileSync("./stations.csv", stationCSV);
+
+// }
