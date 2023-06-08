@@ -105,6 +105,31 @@ const getAllStationsGEOJSON = async (_req, res) =>{
 
 
 
+const jsonToGeoJsonRoutes = (routes) => {
+  return {
+    type: 'FeatureCollection',
+    features: routes.map(route => ({
+      type: 'Feature',
+      geometry: wellknown.parse(route.geometry),
+      properties: route
+    }))
+  };
+};
+
+
+
+const getAllRoutesGEOJSON = async (req, res)=>{
+  try {
+    const allRoutes = await routes.find({});
+    const geoJsonRoutes = jsonToGeoJsonRoutes(allRoutes);
+    res.json(geoJsonRoutes);
+  } catch (error) {
+  res.send(error); 
+  }
+}
+
+
+
 
 export default {
   getAllStations,
@@ -113,7 +138,8 @@ export default {
   deleteStation,
   deleteRoute,
   updateRoute,
-  getAllStationsGEOJSON
+  getAllStationsGEOJSON,
+  getAllRoutesGEOJSON
 };
 
 

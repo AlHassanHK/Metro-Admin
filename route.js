@@ -10,18 +10,7 @@ const routeSchema = new mongoose.Schema({
     required: true,
   },
   geometry: {
-    type: [
-      {
-        latitude: {
-          type: Number,
-          required: true,
-        },
-        longitude: {
-          type: Number,
-          required: true,
-        },
-      },
-    ],
+    type: String,
     required: true,
   },
   route_id: {
