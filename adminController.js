@@ -140,6 +140,16 @@ const getAllSchedules = async (req, res)=>{
   }
 }
 
+
+const getSchedulesByStationName = async (req, res)=>{
+try {
+  const {station} = req.params;
+  const stationSchedules = await schedules.find({stop_name:station});
+  res.json(stationSchedules);
+} catch (error) {
+  res.send(error.message);
+}
+}
 export default {
   getAllStations,
   getStationByName,
@@ -149,7 +159,8 @@ export default {
   updateRoute,
   getAllStationsGEOJSON,
   getAllRoutesGEOJSON,
-  getAllSchedules
+  getAllSchedules,
+  getSchedulesByStationName
 };
 
 
