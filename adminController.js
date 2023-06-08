@@ -1,5 +1,6 @@
 import stations from "./station.js";
 import routes from "./route.js";
+import schedules from "./schedule.js";
 import wellknown from 'wellknown';
 
 
@@ -129,7 +130,15 @@ const getAllRoutesGEOJSON = async (req, res)=>{
 }
 
 
+const getAllSchedules = async (req, res)=>{
+  try {
+    const allSchedules = await schedules.find({});
 
+    res.status(200).json(allSchedules);
+  } catch (error) {
+    res.status(400).send(error.message);
+  }
+}
 
 export default {
   getAllStations,
@@ -139,7 +148,8 @@ export default {
   deleteRoute,
   updateRoute,
   getAllStationsGEOJSON,
-  getAllRoutesGEOJSON
+  getAllRoutesGEOJSON,
+  getAllSchedules
 };
 
 
