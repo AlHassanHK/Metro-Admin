@@ -4,6 +4,9 @@ const scheduleSchema = new mongoose.Schema({
     route_id: {
         type: String, required: true
     },
+    direction: {
+        type: String, required: true
+    },
     stop_id: {
         type: String, required: true
     },
