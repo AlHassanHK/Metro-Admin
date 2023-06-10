@@ -1,7 +1,9 @@
 import stations from "./station.js";
 import routes from "./route.js";
 import schedules from "./schedule.js";
+import prices from "./prices.js";
 import wellknown from 'wellknown';
+
 
 
 const getAllStations = async (req, res) => {
@@ -163,6 +165,33 @@ const updateSchedule = async (req, res)=>{
   }
 }
 
+
+const getAllPrices = async (req, res)=>{
+  try {
+    const allPrices = await prices.find({});
+    res.status(200).json(allPrices);
+  } catch (error) {
+    res.status(400).json({error: error.message});
+  }
+}
+
+
+const updatePrice = async (req, res)=>{
+try {
+  const numOfStations = req.body.numOfStations
+  const price = req.body.price
+  const updatedDoc = await prices.findOneAndUpdate({numOfStations : numOfStations}, {$set: { price: price }});
+  
+  res.status(200).json({updatedDocument: updatedDoc});
+} catch (error) {
+  res.status(400).json({error:error.message});
+}
+
+}
+
+
+
+
 export default {
   getAllStations,
   getStationByName,
@@ -174,7 +203,9 @@ export default {
   getAllRoutesGEOJSON,
   getAllSchedules,
   getSchedulesByStationName,
-  updateSchedule
+  updateSchedule,
+  getAllPrices,
+  updatePrice
 };
 
 
