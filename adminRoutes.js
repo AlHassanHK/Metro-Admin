@@ -11,6 +11,7 @@ router.route("/schedules").get(userController.getAllSchedules);
 router.route("/schedules/:station").get(userController.getSchedulesByStationName);
 router.route("/prices").get(userController.getAllPrices);
 router.route("/addStation").post(userController.addStation);
+router.route("/route-station").post(userController.insertStation);
 router.route("/updatePrice").patch(userController.updatePrice);
 router.route("/updateSchedule/:stopId").post(userController.updateSchedule);
 router.route("/delete/:stationName").delete(userController.deleteStation);

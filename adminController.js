@@ -2,11 +2,13 @@ import stations from "./station.js";
 import routes from "./route.js";
 import schedules from "./schedule.js";
 import prices from "./prices.js";
-import wellknown from 'wellknown';
-
-
+import wellknown from "wellknown";
+import Wkt from "wicket";
+import axios from "axios";
+import { uuid } from 'uuidv4';
 
 const getAllStations = async (req, res) => {
+
   try {
     const allStations = await stations.find({});
     res.status(200).json(allStations);
@@ -18,7 +20,9 @@ const getAllStations = async (req, res) => {
 const getStationByName = async (req, res) => {
   try {
     const { stationName } = req.params.stationName;
-    const foundStation = await stations.findOne({ "stop_name": req.params.stationName });
+    const foundStation = await stations.findOne({
+      stop_name: req.params.stationName,
+    });
     res.status(200).json(foundStation);
   } catch (error) {
     res.status(400).send(error.message);
@@ -27,112 +31,123 @@ const getStationByName = async (req, res) => {
 
 const addStation = async (req, res) => {
   try {
-    const newStation = await stations.create(req.body);
-    res.status(200).json(newStation);
+    const { geometry, route_id, stop_name, stop_id } = req.body;
 
+    const newStation = await stations.create({ geometry, route_id, stop_name, stop_id });
+    res.status(200).json(newStation);
   } catch (error) {
     res.status(400).json(error.message);
   }
-}
+};
 
 const deleteStation = async (req, res) => {
   try {
     const deletedStation = await stations.findOne({
-      stop_name: req.params.stationName
-    })
+      stop_name: req.params.stationName,
+    });
 
-    const deleteCount = await stations.deleteOne({ stop_name: req.params.stationName });
+    const deleteCount = await stations.deleteOne({
+      stop_name: req.params.stationName,
+    });
 
-    res.status(200).json({ "Successfully deleted": deletedStation.FID, "Name": deletedStation.stop_name, deleteCount });
+    res.status(200).json({
+      "Successfully deleted": deletedStation.FID,
+      Name: deletedStation.stop_name,
+      deleteCount,
+    });
   } catch (error) {
     res.status(400).json(error.message);
   }
-}
+};
 
 const updateRoute = async (req, res) => {
   try {
     //const options = { upsert: true };
     const updatedRoute = await routes.findOne({
-      route_ID: req.params.route_id
+      route_ID: req.params.route_id,
     });
 
     const newCoordinates = {
       $set: {
-        geometry: req.body.geometry
+        geometry: req.body.geometry,
       },
     };
 
     const result = await updatedRoute.updateOne(newCoordinates, options);
 
-    res.status(200).json(`${result.matchedCount} document matched the route inserted, updated ${result.modifiedCount} the route coordinates`);
+    res
+      .status(200)
+      .json(
+        `${result.matchedCount} document matched the route inserted, updated ${result.modifiedCount} the route coordinates`
+      );
   } catch (error) {
     res.status(400).json(error.message);
   }
-}
+};
 
 const deleteRoute = async (req, res) => {
   try {
     const deletedRoute = await routes.findOne({
-      route_ID: req.params.route_id
-    })
+      route_ID: req.params.route_id,
+    });
 
-    const deleteCount = await routes.deleteOne({ route_ID: req.params.route_id });
+    const deleteCount = await routes.deleteOne({
+      route_ID: req.params.route_id,
+    });
 
-    res.status(200).json({ "Successfully deleted": deletedRoute.FID, "Name": deletedRoute.route_ID, deleteCount });
+    res.status(200).json({
+      "Successfully deleted": deletedRoute.FID,
+      Name: deletedRoute.route_ID,
+      deleteCount,
+    });
   } catch (error) {
     res.status(400).json(error.message);
   }
-}
+};
 
 const jsonToGeoJson = (stations) => {
   return {
-    type: 'FeatureCollection',
-    features: stations.map(station => ({
-      type: 'Feature',
+    type: "FeatureCollection",
+    features: stations.map((station) => ({
+      type: "Feature",
       geometry: wellknown.parse(station.geometry),
-      properties: station
-    }))
+      properties: station,
+    })),
   };
 };
 
-
-const getAllStationsGEOJSON = async (_req, res) =>{
+const getAllStationsGEOJSON = async (_req, res) => {
   try {
     const allStations = await stations.find({});
-    const geoJsonStations = jsonToGeoJson(allStations);  
+    const geoJsonStations = jsonToGeoJson(allStations);
     res.status(200).json(geoJsonStations);
   } catch (error) {
     res.status(400).send(error.message);
   }
-}
-
-
+};
 
 const jsonToGeoJsonRoutes = (routes) => {
   return {
-    type: 'FeatureCollection',
-    features: routes.map(route => ({
-      type: 'Feature',
+    type: "FeatureCollection",
+    features: routes.map((route) => ({
+      type: "Feature",
       geometry: wellknown.parse(route.geometry),
-      properties: route
-    }))
+      properties: route,
+    })),
   };
 };
 
-
-
-const getAllRoutesGEOJSON = async (req, res)=>{
+const getAllRoutesGEOJSON = async (req, res) => {
   try {
     const allRoutes = await routes.find({});
     const geoJsonRoutes = jsonToGeoJsonRoutes(allRoutes);
     res.json(geoJsonRoutes);
   } catch (error) {
-  res.send(error); 
+    res.send(error);
   }
-}
+};
 
-
-const getAllSchedules = async (req, res)=>{
+const getAllSchedules = async (req, res) => {
   try {
     const allSchedules = await schedules.find({});
 
@@ -140,57 +155,106 @@ const getAllSchedules = async (req, res)=>{
   } catch (error) {
     res.status(400).send(error.message);
   }
-}
+};
 
-
-const getSchedulesByStationName = async (req, res)=>{
-try {
-  const {station} = req.params;
-  const stationSchedules = await schedules.find({stop_name:station});
-  res.json(stationSchedules);
-} catch (error) {
-  res.send(error.message);
-}
-}
-
-
-const updateSchedule = async (req, res)=>{
+const getSchedulesByStationName = async (req, res) => {
   try {
-    const {stopId} = req.params;
+    const { station } = req.params;
+    const stationSchedules = await schedules.find({ stop_name: station });
+    res.json(stationSchedules);
+  } catch (error) {
+    res.send(error.message);
+  }
+};
+
+const updateSchedule = async (req, res) => {
+  try {
+    const { stopId } = req.params;
     const newSchedule = req.body;
-    const schedule = await schedules.findOneAndUpdate({stop_id:stopId}, newSchedule);
-    res.status(200).json({newSchedule: newSchedule, oldSchedule: schedule});
+    const schedule = await schedules.findOneAndUpdate(
+      { stop_id: stopId },
+      newSchedule
+    );
+    res.status(200).json({ newSchedule: newSchedule, oldSchedule: schedule });
   } catch (error) {
     res.status(400).send(error.message);
   }
-}
+};
 
-
-const getAllPrices = async (req, res)=>{
+const getAllPrices = async (req, res) => {
   try {
     const allPrices = await prices.find({});
     res.status(200).json(allPrices);
   } catch (error) {
-    res.status(400).json({error: error.message});
+    res.status(400).json({ error: error.message });
   }
-}
+};
+
+const updatePrice = async (req, res) => {
+  try {
+    const numOfStations = req.body.numOfStations;
+    const price = req.body.price;
+    const updatedDoc = await prices.findOneAndUpdate(
+      { numOfStations: numOfStations },
+      { $set: { price: price } }
+    );
+
+    res.status(200).json({ updatedDocument: updatedDoc });
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
+};
+
+const insertStation = async (req, res) => {
+  try {
+    const { lat, long, routeId, stopName, stopId } = req.body;
 
 
-const updatePrice = async (req, res)=>{
-try {
-  const numOfStations = req.body.numOfStations
-  const price = req.body.price
-  const updatedDoc = await prices.findOneAndUpdate({numOfStations : numOfStations}, {$set: { price: price }});
-  
-  res.status(200).json({updatedDocument: updatedDoc});
-} catch (error) {
-  res.status(400).json({error:error.message});
-}
+    // Fetch route from MongoDB
+    const route = await routes.findOne({ route_id: routeId });
+    if (!route) {
+      return res.status(404).json({ message: "Route not found" });
+    }
 
-}
+    // Add new station
+
+    let wkt = new Wkt.Wkt();
+
+    wkt.fromObject({
+      type: "Point",
+      coordinates: [parseFloat(lat), parseFloat(long)],
+    });
 
 
+    const newStationResponse = await axios.post(
+      "https://metro-admin-gray.vercel.app/api/admin/addStation",
+      {geometry: wkt.write(), route_id: routeId, stop_name: stopName, stop_id: stopId, fid:Math.floor(Math.random() * 100000), FID:uuid()}
 
+    );
+
+    
+    console.log(newStationResponse);
+
+    if (newStationResponse.status !== 200) {
+      return res.status(500).json({ message: "Failed to add new station" });
+    }
+
+    const newStation = newStationResponse.data;
+
+    // Update route's LINESTRING
+    const updatedLinestring = `${route.linestring}, ${lat} ${long}`;
+    const updatedRoute = await routes.findOneAndUpdate({
+      route_id: routeId
+    },
+      { linestring: updatedLinestring },
+      { new: true }
+    );
+
+    res.json({ updatedRoute, newStation });
+  } catch (error) {
+    res.status(400).send(`${error.message}`);
+  }
+};
 
 export default {
   getAllStations,
@@ -205,27 +269,9 @@ export default {
   getSchedulesByStationName,
   updateSchedule,
   getAllPrices,
-  updatePrice
+  updatePrice,
+  insertStation,
 };
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 // const getAllStationsCSV = async (req, res) => {
 //   await writeCSV();
@@ -233,20 +279,15 @@ export default {
 //   res.sendFile("C:\\Users\\alhas\\Desktop\\cairo-metro-backup\\admin\\stations.csv");
 // }
 
-
-
-
-
-
 // const writeCSV = async () => {
-  //   let stationCSV = `FID,fid,geometry,stop_id,stop_name,route_id\n`
-  //   const rawData = await axios.get("https://metro-admin-gray.vercel.app/api/admin");
-  //   const allStations = rawData.data;
-  
+//   let stationCSV = `FID,fid,geometry,stop_id,stop_name,route_id\n`
+//   const rawData = await axios.get("https://metro-admin-gray.vercel.app/api/admin");
+//   const allStations = rawData.data;
+
 //   for (let station of allStations) {
-  //     for (let field in station) {
-    //       if (field === "route_id") {
-      //         stationCSV += `${station[field]}`;
+//     for (let field in station) {
+//       if (field === "route_id") {
+//         stationCSV += `${station[field]}`;
 //       } else {
 //         stationCSV += `${station[field]},`;
 
