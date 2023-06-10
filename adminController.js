@@ -150,6 +150,19 @@ try {
   res.send(error.message);
 }
 }
+
+
+const updateSchedule = async (req, res)=>{
+  try {
+    const {stopId} = req.params;
+    const newSchedule = req.body;
+    const schedule = await schedules.findOneAndUpdate({stop_id:stopId}, newSchedule);
+    res.status(200).json({newSchedule: newSchedule, oldSchedule: schedule});
+  } catch (error) {
+    res.status(400).send(error.message);
+  }
+}
+
 export default {
   getAllStations,
   getStationByName,
@@ -160,7 +173,8 @@ export default {
   getAllStationsGEOJSON,
   getAllRoutesGEOJSON,
   getAllSchedules,
-  getSchedulesByStationName
+  getSchedulesByStationName,
+  updateSchedule
 };
 
 
