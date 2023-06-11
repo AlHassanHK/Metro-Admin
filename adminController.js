@@ -207,7 +207,7 @@ const updatePrice = async (req, res) => {
 
 const insertStation = async (req, res) => {
   try {
-    const { lat, long, routeId, stopName, stopId } = req.body;
+    const { lat, long, routeId, stopName, stopId, position } = req.body;
 
 
     // Fetch route from MongoDB
@@ -241,8 +241,10 @@ const insertStation = async (req, res) => {
 
     const newStation = newStationResponse.data;
 
+    let updatedLinestring;
     // Update route's LINESTRING
-    const updatedLinestring = `${route.linestring}, ${lat} ${long}`;
+    position === "start" ? updatedLinestring = `${lat} ${long}, ${route.linestring}` : updatedLinestring = `${route.linestring}, ${lat} ${long}`;
+    
     const updatedRoute = await routes.findOneAndUpdate({
       route_id: routeId
     },
@@ -251,6 +253,85 @@ const insertStation = async (req, res) => {
     );
 
     res.json({ updatedRoute, newStation });
+  } catch (error) {
+    res.status(400).send(`${error.message}`);
+  }
+};
+
+const updateStation = async (req, res) => {
+  try {
+    const { stationName } = req.params;
+    const { lat, long, routeId } = req.body;
+
+    // Fetch station from MongoDB
+    const station = await stations.findOne({ stop_name: stationName });
+    if (!station) {
+      return res.status(404).json({ message: "Station not found" });
+    }
+
+    // Fetch route from MongoDB
+    const route = await routes.findOne({ route_id: routeId });
+    if (!route) {
+      return res.status(404).json({ message: "Route not found" });
+    }
+
+    // Update station
+    let wkt = new Wkt.Wkt();
+    wkt.fromObject({
+      type: "Point",
+      coordinates: [parseFloat(lat), parseFloat(long)],
+    });
+    const updatedStation = await stations.findOneAndUpdate({ stop_name: stationName },
+      { geometry: wkt.write(), route_id: routeId }, { new: true }
+    );
+
+    // Update route's LINESTRING
+    let routeGeometry = wellknown.parse(route.geometry);
+    routeGeometry.coordinates = routeGeometry.coordinates.map(coordinate => 
+      (coordinate[0] === wellknown.parse(station.geometry).coordinates[0] && coordinate[1] === wellknown.parse(station.geometry).coordinates[1]) ? 
+      [parseFloat(long), parseFloat(lat)] : coordinate
+    );
+    const updatedRoute = await routes.findOneAndUpdate({ route_id: routeId },
+      { geometry: wellknown.stringify(routeGeometry) },
+      { new: true }
+    );
+
+    res.json({ updatedRoute, updatedStation });
+  } catch (error) {
+    res.status(400).send(`${error.message}`);
+  }
+};
+
+const deleteStationAndUpdateRoute = async (req, res) => {
+  try {
+    const { stationName } = req.params;
+
+    // Fetch station from MongoDB
+    const station = await stations.findOne({ stop_name: stationName });
+    if (!station) {
+      return res.status(404).json({ message: "Station not found" });
+    }   
+
+    // Fetch route from MongoDB
+    const route = await routes.findOne({ route_id: station.route_id });
+    if (!route) {
+      console.log('Failed to find route with route_id:', station.route_id);
+      return res.status(404).json({ message: "Route not found" });
+    }
+    // Delete station
+    const deletedStation = await stations.findOneAndDelete({ stop_name: stationName });
+
+    // Update route's LINESTRING
+    let routeGeometry = wellknown.parse(route.geometry);
+    routeGeometry.coordinates = routeGeometry.coordinates.filter(coordinate => 
+      !(coordinate[0] === wellknown.parse(station.geometry).coordinates[0] && coordinate[1] === wellknown.parse(station.geometry).coordinates[1])
+    );
+    const updatedRoute = await routes.findOneAndUpdate({ route_id: station.route_id },
+      { geometry: wellknown.stringify(routeGeometry) },
+      { new: true }
+    );
+
+    res.json({ updatedRoute, deletedStation });
   } catch (error) {
     res.status(400).send(`${error.message}`);
   }
@@ -271,6 +352,8 @@ export default {
   getAllPrices,
   updatePrice,
   insertStation,
+  updateStation,
+  deleteStationAndUpdateRoute
 };
 
 // const getAllStationsCSV = async (req, res) => {

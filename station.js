@@ -21,6 +21,10 @@ const stationSchema = new mongoose.Schema({
         type: String,
         required: true,
     },
+    route_id: {
+        type: String,
+        required: true,
+    },
 });
 
 const Station = mongoose.model("stations", stationSchema);
